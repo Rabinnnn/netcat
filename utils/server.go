@@ -12,11 +12,17 @@ type client struct {
 	connection net.Conn
 }
 
-var maxConnections = 10
-var clients = make([]*client, 0, maxConnections)
-var mAll sync.Mutex
-var chatHistory []string
-var mChatHistory sync.Mutex
+var maxConnections = 10 // maximum number of connected clients allowed.
+var clients = make([]*client, 0, maxConnections) // slice holding all connected clients
+var mClients sync.Mutex // mutex to synchronize access to clients slice
+var chatHistory []string // slice to store messages
+var mChatHistory sync.Mutex // mutex to synchronize access to chatHistory
+
+// Server sets up a tcp server for the application.
+// It:
+// 	- listens on the specified port and accept incomming client connections
+//	- gracefully handles errors that might arise during the process
+// 	- ensures the number of connected clients doesn't exceed 10
 
 func Server(port string){
 	listener, err := net.Listen("tcp", port)
@@ -36,14 +42,14 @@ func Server(port string){
 			continue
 		}
 
-		mAll.Lock()
+		mClients.Lock()
 		if len(clients) >= maxConnections {
-			mAll.Unlock()
+			mClients.Unlock()
 			connection.Write([]byte("The group chat is currently full. Please try again later.\n"))
 			connection.Close()
 			continue
 		}
-		mAll.Unlock()
+		mClients.Unlock()
 	}
 
 }
