@@ -7,7 +7,7 @@ import(
 	"strings"
 )
 
-func clientConnection(connection net.Conn){
+func AddNewClient(connection net.Conn){
 	connection.SetDeadline(time.Now().Add(60 * time.Second))
 	
 	DisplayLogo(connection)
