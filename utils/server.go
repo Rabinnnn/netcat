@@ -50,6 +50,8 @@ func Server(port string){
 			continue
 		}
 		mClients.Unlock()
+
+		go AddNewClient(connection)
 	}
 
 }
