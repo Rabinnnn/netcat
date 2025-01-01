@@ -10,6 +10,7 @@ import(
 func AddNewClient(connection net.Conn){
 	connection.SetDeadline(time.Now().Add(60 * time.Second))
 	
+	connection.Write([]byte("Welcome to TCP-Chat!\n"))
 	DisplayLogo(connection)
 	connection.Write([]byte("[ENTER YOUR NAME]: "))
 
