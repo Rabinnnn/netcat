@@ -1,10 +1,11 @@
 package utils
 
 import(
-	"fmt"
 	"log"
 	"net"
 	"sync"
+	"strings"
+	"strconv"
 )
 
 type client struct {
@@ -25,15 +26,21 @@ var mChatHistory sync.Mutex // mutex to synchronize access to chatHistory
 // 	- ensures the number of connected clients doesn't exceed 10
 
 func Server(port string){
+	portNum, err := strconv.Atoi(strings.TrimPrefix(port, ":"))
+	if err != nil{
+		log.Printf("Invalid port number %q: %v\n", port, err)
+		return
+	}
+
 	listener, err := net.Listen("tcp", port)
 	if err != nil{
-		log.Printf("Error listening on port %q: %v\n", port, err)
+		log.Printf("Error listening on the port %d: %v\n", portNum, err)
 		return
 	}
 	defer listener.Close()
-
-	log.Printf("Listening on port %q\n", port)
-	fmt.Printf("Listening on port %q\n", port)
+	
+	log.Printf("Listening on the port :%d\n", portNum)
+	//fmt.Printf("Listening on port %q\n", port)
 
 	for {
 		connection, err := listener.Accept()
