@@ -50,8 +50,6 @@ func AddNewClient(connection net.Conn){
 	clients = append(clients, newClient)
 	mClients.Unlock()
 
-	connection.Write([]byte(fmt.Sprintf("Welcome to the chat, %s!\n",clientName )))
-
 	DisplayChats(newClient)
 	BroadcastMessage(fmt.Sprintf("\n%v has joined our chat...", clientName), connection)
 	go HandleClientSession(newClient)
