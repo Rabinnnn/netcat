@@ -9,5 +9,6 @@ func DisplayChats(client *client){
 		for _, chat := range chatHistory{
 			client.connection.Write([]byte(chat))
 		}
+		client.connection.Write([]byte("\n"))
 	}
 }

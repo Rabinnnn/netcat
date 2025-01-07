@@ -25,6 +25,7 @@ func AddNewClient(connection net.Conn){
 	connection.SetDeadline(time.Time{})
 
 	clientName := strings.TrimSpace(string(buffer[:num]))
+	//fmt.Println(clientName)
 	if clientName == ""{
 		connection.Write([]byte("Name must not be empty\n"))
 		connection.Close()

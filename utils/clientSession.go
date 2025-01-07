@@ -12,7 +12,7 @@ func HandleClientSession(client *client){
 	buffer := make([]byte, 4096)
 
 	for {
-		client.connection.Write([]byte(fmt.Sprintf("[%s][%s]:", time.Now().Format(time.DateTime), client.name)))
+		client.connection.Write([]byte(fmt.Sprintf("[%s][%s]:", time.Now().Format("2006-01-02 15:04:05"), client.name)))
 		num, err := client.connection.Read(buffer)
 		if err != nil{
 			if err.Error() == "EOF"{
@@ -29,7 +29,18 @@ func HandleClientSession(client *client){
 			break
 		}
 
-		formattedClientMessage := fmt.Sprintf("\n[%s][%s]: %s", time.Now().Format(time.DateTime),client.name, clientMessage)
+		formattedClientMessage := ""
+		mChatHistory.Lock()
+		if len(chatHistory) == 0{
+			formattedClientMessage = fmt.Sprintf("[%s][%s]: %s", time.Now().Format("2006-01-02 15:04:05"),client.name, clientMessage)
+		}else{
+			formattedClientMessage = fmt.Sprintf("\n[%s][%s]: %s", time.Now().Format("2006-01-02 15:04:05"),client.name, clientMessage)
+
+		}
+		
+		chatHistory = append(chatHistory, formattedClientMessage)
+		mChatHistory.Unlock()
+
 		BroadcastMessage(formattedClientMessage, client.connection)
 	}
 }
