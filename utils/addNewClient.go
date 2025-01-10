@@ -13,46 +13,53 @@ func AddNewClient(connection net.Conn) {
 
 	connection.Write([]byte("Welcome to TCP-Chat!\n"))
 	DisplayLogo(connection)
-	connection.Write([]byte("[ENTER YOUR NAME]: "))
 
-	buffer := make([]byte, 1024)
-	num, err := connection.Read(buffer)
-	if err != nil {
-		log.Printf("Error reading client name: %v\n", err)
-		connection.Close()
-		return
-	}
-
-	connection.SetDeadline(time.Time{})
-
-	clientName := strings.TrimSpace(string(buffer[:num]))
-	// fmt.Println(clientName)
-	if clientName == "" {
-		connection.Write([]byte("Name must not be empty\n"))
-		connection.Close()
-		return
-	}
-
-	mClients.Lock()
-	for _, client := range clients {
-		if strings.EqualFold(client.name, clientName) {
-			mClients.Unlock()
-			connection.Write([]byte("The name has already been taken by another user\n"))
+	for {
+		connection.Write([]byte("[ENTER YOUR NAME]: "))
+		buffer := make([]byte, 1024)
+		num, err := connection.Read(buffer)
+		if err != nil {
+			log.Printf("Error reading client name: %v\n", err)
 			connection.Close()
 			return
 		}
-	}
-	mClients.Unlock()
 
-	newClient := &client{
-		name:       clientName,
-		connection: connection,
-	}
-	mClients.Lock()
-	clients = append(clients, newClient)
-	mClients.Unlock()
+		clientName := strings.TrimSpace(string(buffer[:num]))
 
-	DisplayChats(newClient)
-	BroadcastMessage(fmt.Sprintf("\n%v has joined our chat...", clientName), connection)
-	go HandleClientSession(newClient)
+		if clientName == "" {
+			connection.Write([]byte("Name must not be empty. Please try again.\n"))
+			continue
+		}
+
+		mClients.Lock()
+		isDuplicate := false
+		for _, client := range clients {
+			if strings.EqualFold(client.name, clientName) {
+				isDuplicate = true
+				break
+			}
+		}
+		mClients.Unlock()
+
+		if isDuplicate {
+			connection.Write([]byte("The name has already been taken by another user. Please choose a different name.\n"))
+			continue
+		}
+
+		connection.SetDeadline(time.Time{}) // Remove deadline after successful name entry
+
+		newClient := &client{
+			name:       clientName,
+			connection: connection,
+		}
+
+		mClients.Lock()
+		clients = append(clients, newClient)
+		mClients.Unlock()
+
+		DisplayChats(newClient)
+		BroadcastMessage(fmt.Sprintf("\n%v has joined our chat...", clientName), connection)
+		go HandleClientSession(newClient)
+		return
+	}
 }
