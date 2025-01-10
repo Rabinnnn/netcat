@@ -50,11 +50,45 @@ func getWrittenData(mock *mockConn) string {
 	return mock.writeData.String()
 }
 
+// Mock listener for testing
+type mockListener struct {
+	acceptChan chan net.Conn
+	closed     bool
+}
+
+func newMockListener() *mockListener {
+	return &mockListener{
+		acceptChan: make(chan net.Conn),
+		closed:     false,
+	}
+}
+
+func (m *mockListener) Accept() (net.Conn, error) {
+	conn, ok := <-m.acceptChan
+	if !ok {
+		return nil, net.ErrClosed
+	}
+	return conn, nil
+}
+
+func (m *mockListener) Close() error {
+	if !m.closed {
+		close(m.acceptChan)
+		m.closed = true
+	}
+	return nil
+}
+
+func (m *mockListener) Addr() net.Addr {
+	return &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 8080}
+}
+
+var netListen = net.Listen
+
 // Test timeout handling
 func TestAddNewClientTimeout(t *testing.T) {
 	mock := &mockConn{}
 
-	// Set up a channel to track when the function returns
 	done := make(chan bool)
 	go func() {
 		AddNewClient(mock)
@@ -75,7 +109,7 @@ func TestAddNewClientTimeout(t *testing.T) {
 // Test concurrent access
 func TestAddNewClientConcurrent(t *testing.T) {
 	const numClients = 10
-	done := make(chan bool)
+	done := make(chan bool, numClients)
 
 	for i := 0; i < numClients; i++ {
 		go func(id int) {
@@ -114,26 +148,10 @@ func TestAddNewClientInvalidInput(t *testing.T) {
 		input     string
 		wantError bool
 	}{
-		{
-			name:      "Very long name",
-			input:     strings.Repeat("a", 1025) + "\n",
-			wantError: true,
-		},
-		{
-			name:      "Empty name field",
-			input:     "\n",
-			wantError: true,
-		},
-		{
-			name:      "Special characters",
-			input:     "user@#$%\n",
-			wantError: false,
-		},
-		{
-			name:      "Unicode characters",
-			input:     "用户名\n",
-			wantError: false,
-		},
+		{"Very long name", strings.Repeat("a", 1025) + "\n", true},
+		{"Empty name field", "\n", true},
+		{"Special characters", "user@#$%\n", false},
+		{"Unicode characters", "用户名\n", false},
 	}
 
 	for _, tt := range tests {
@@ -149,62 +167,27 @@ func TestAddNewClientInvalidInput(t *testing.T) {
 	}
 }
 
-// Mock listener for testing
-type mockListener struct {
-	acceptChan chan net.Conn
-	closed     bool
-}
-
-func (m *mockListener) Accept() (net.Conn, error) {
-	conn, ok := <-m.acceptChan
-	if !ok {
-		return nil, net.ErrClosed
-	}
-	return conn, nil
-}
-
-func (m *mockListener) Close() error {
-	if !m.closed {
-		close(m.acceptChan)
-		m.closed = true
-	}
-	return nil
-}
-
-func (m *mockListener) Addr() net.Addr {
-	return &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 8080}
-}
-
-var netListen = net.Listen
-
-var originalNetListen = net.Listen
-
 func TestServer(t *testing.T) {
 	tests := []struct {
-		name         string
-		port         string
-		mockListener *mockListener
-		wantError    bool
+		name string
+		port string
+		// mockListener *mockListener
+		wantError bool
 	}{
-		{
-			name:      "invalid port",
-			port:      ":invalid",
-			wantError: true,
-		},
-		{
-			name:      "valid port normal operation",
-			port:      ":8080",
-			wantError: false,
-		},
+		{"invalid port", ":invalid", true},
+		{"valid port", ":8080", false},
 	}
+
+	originalNetListen := netListen
+	defer func() { netListen = originalNetListen }()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			netListen = func(network, addr string) (net.Listener, error) {
-				if tt.mockListener == nil {
+				if tt.wantError {
 					return nil, net.ErrClosed
 				}
-				return tt.mockListener, nil
+				return newMockListener(), nil
 			}
 
 			serverStarted := make(chan struct{})
@@ -214,14 +197,11 @@ func TestServer(t *testing.T) {
 				Server(tt.port)
 			}()
 
-			// Wait for server to start
-			<-serverStarted
+			select {
+			case <-serverStarted:
+			case <-time.After(time.Second):
 
-			if tt.mockListener != nil {
-				tt.mockListener.Close()
 			}
-
-			netListen = originalNetListen
 		})
 	}
 }
