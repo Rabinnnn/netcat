@@ -49,6 +49,28 @@ func getWrittenData(mock *mockConn) string {
 	return mock.writeData.String()
 }
 
+// Test timeout handling
+func TestAddNewClientTimeout(t *testing.T) {
+	mock := &mockConn{}
+
+	// Set up a channel to track when the function returns
+	done := make(chan bool)
+	go func() {
+		AddNewClient(mock)
+		done <- true
+	}()
+
+	// Wait for timeout or completion
+	select {
+	case <-done:
+		if !mock.closed {
+			t.Error("Connection should be closed after timeout")
+		}
+	case <-time.After(65 * time.Second):
+		t.Error("Function did not timeout as expected")
+	}
+}
+
 // Test invalid input handling
 func TestAddNewClientInvalidInput(t *testing.T) {
 	tests := []struct {
