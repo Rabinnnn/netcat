@@ -1,22 +1,23 @@
 package utils
-import(
+
+import (
 	"fmt"
-	"time"
-	"net"
 	"log"
+	"net"
 	"strings"
+	"time"
 )
 
-func AddNewClient(connection net.Conn){
+func AddNewClient(connection net.Conn) {
 	connection.SetDeadline(time.Now().Add(60 * time.Second))
-	
+
 	connection.Write([]byte("Welcome to TCP-Chat!\n"))
 	DisplayLogo(connection)
 	connection.Write([]byte("[ENTER YOUR NAME]: "))
 
 	buffer := make([]byte, 1024)
 	num, err := connection.Read(buffer)
-	if err != nil{
+	if err != nil {
 		log.Printf("Error reading client name: %v\n", err)
 		connection.Close()
 		return
@@ -25,16 +26,16 @@ func AddNewClient(connection net.Conn){
 	connection.SetDeadline(time.Time{})
 
 	clientName := strings.TrimSpace(string(buffer[:num]))
-	//fmt.Println(clientName)
-	if clientName == ""{
+	// fmt.Println(clientName)
+	if clientName == "" {
 		connection.Write([]byte("Name must not be empty\n"))
 		connection.Close()
 		return
 	}
 
 	mClients.Lock()
-	for _, client := range clients{
-		if strings.EqualFold(client.name, clientName){
+	for _, client := range clients {
+		if strings.EqualFold(client.name, clientName) {
 			mClients.Unlock()
 			connection.Write([]byte("The name has already been taken by another user\n"))
 			connection.Close()
@@ -44,7 +45,7 @@ func AddNewClient(connection net.Conn){
 	mClients.Unlock()
 
 	newClient := &client{
-		name: clientName,
+		name:       clientName,
 		connection: connection,
 	}
 	mClients.Lock()
@@ -54,5 +55,4 @@ func AddNewClient(connection net.Conn){
 	DisplayChats(newClient)
 	BroadcastMessage(fmt.Sprintf("\n%v has joined our chat...", clientName), connection)
 	go HandleClientSession(newClient)
-
 }
