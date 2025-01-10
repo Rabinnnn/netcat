@@ -27,8 +27,14 @@ func AddNewClient(connection net.Conn) {
 		clientName := strings.TrimSpace(string(buffer[:num]))
 
 		if clientName == "" {
-			connection.Write([]byte("Name must not be empty. Please try again.\n"))
+			connection.Write([]byte("Name error must not be empty. Please try again.\n"))
 			continue
+		}
+
+		if len(clientName) > 25 {
+			connection.Write([]byte("Name length error : must be less than 25 characters.\n"))
+			continue
+
 		}
 
 		mClients.Lock()
