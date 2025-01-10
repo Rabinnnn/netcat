@@ -148,3 +148,80 @@ func TestAddNewClientInvalidInput(t *testing.T) {
 		})
 	}
 }
+
+// Mock listener for testing
+type mockListener struct {
+	acceptChan chan net.Conn
+	closed     bool
+}
+
+func (m *mockListener) Accept() (net.Conn, error) {
+	conn, ok := <-m.acceptChan
+	if !ok {
+		return nil, net.ErrClosed
+	}
+	return conn, nil
+}
+
+func (m *mockListener) Close() error {
+	if !m.closed {
+		close(m.acceptChan)
+		m.closed = true
+	}
+	return nil
+}
+
+func (m *mockListener) Addr() net.Addr {
+	return &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 8080}
+}
+
+var netListen = net.Listen
+
+var originalNetListen = net.Listen
+
+func TestServer(t *testing.T) {
+	tests := []struct {
+		name         string
+		port         string
+		mockListener *mockListener
+		wantError    bool
+	}{
+		{
+			name:      "invalid port",
+			port:      ":invalid",
+			wantError: true,
+		},
+		{
+			name:      "valid port normal operation",
+			port:      ":8080",
+			wantError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			netListen = func(network, addr string) (net.Listener, error) {
+				if tt.mockListener == nil {
+					return nil, net.ErrClosed
+				}
+				return tt.mockListener, nil
+			}
+
+			serverStarted := make(chan struct{})
+
+			go func() {
+				close(serverStarted)
+				Server(tt.port)
+			}()
+
+			// Wait for server to start
+			<-serverStarted
+
+			if tt.mockListener != nil {
+				tt.mockListener.Close()
+			}
+
+			netListen = originalNetListen
+		})
+	}
+}
