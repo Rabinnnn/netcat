@@ -1,8 +1,9 @@
 package utils
-import(
+
+import (
 	"net"
 )
 
-func DisplayLogo(connection net.Conn){
+func DisplayLogo(connection net.Conn) {
 	connection.Write([]byte(GetLogo("linuxLogo.txt")))
 }
