@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net"
 	"strings"
@@ -69,6 +70,41 @@ func TestAddNewClientTimeout(t *testing.T) {
 	case <-time.After(65 * time.Second):
 		t.Error("Function did not timeout as expected")
 	}
+}
+
+// Test concurrent access
+func TestAddNewClientConcurrent(t *testing.T) {
+	const numClients = 10
+	done := make(chan bool)
+
+	for i := 0; i < numClients; i++ {
+		go func(id int) {
+			mock := newMockConn(fmt.Sprintf("user%d\n", id))
+			AddNewClient(mock)
+			done <- true
+		}(i)
+	}
+
+	// Wait for all clients to complete
+	for i := 0; i < numClients; i++ {
+		select {
+		case <-done:
+			// Client completed successfully
+		case <-time.After(5 * time.Second):
+			t.Error("Timeout waiting for client to complete")
+		}
+	}
+
+	// Verify no duplicate names were added
+	mClients.Lock()
+	names := make(map[string]bool)
+	for _, client := range clients {
+		if names[client.name] {
+			t.Error("Duplicate name found:", client.name)
+		}
+		names[client.name] = true
+	}
+	mClients.Unlock()
 }
 
 // Test invalid input handling
