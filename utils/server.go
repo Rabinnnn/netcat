@@ -1,23 +1,25 @@
 package utils
 
-import(
+import (
 	"log"
 	"net"
-	"sync"
-	"strings"
 	"strconv"
+	"strings"
+	"sync"
 )
 
 type client struct {
-	name string
+	name       string
 	connection net.Conn
 }
 
-var maxConnections = 10 // maximum number of connected clients allowed.
-var clients = make([]*client, 0, maxConnections) // slice holding all connected clients
-var mClients sync.Mutex // mutex to synchronize access to clients slice
-var chatHistory []string // slice to store messages
-var mChatHistory sync.Mutex // mutex to synchronize access to chatHistory
+var (
+	maxConnections = 10                                 // maximum number of connected clients allowed.
+	clients        = make([]*client, 0, maxConnections) // slice holding all connected clients
+	mClients       sync.Mutex                           // mutex to synchronize access to clients slice
+	chatHistory    []string                             // slice to store messages
+	mChatHistory   sync.Mutex                           // mutex to synchronize access to chatHistory
+)
 
 // Server sets up a tcp server for the application.
 // It:
@@ -25,26 +27,26 @@ var mChatHistory sync.Mutex // mutex to synchronize access to chatHistory
 //	- gracefully handles errors that might arise during the process
 // 	- ensures the number of connected clients doesn't exceed 10
 
-func Server(port string){
+func Server(port string) {
 	portNum, err := strconv.Atoi(strings.TrimPrefix(port, ":"))
-	if err != nil{
+	if err != nil {
 		log.Printf("Invalid port number %q: %v\n", port, err)
 		return
 	}
 
 	listener, err := net.Listen("tcp", port)
-	if err != nil{
+	if err != nil {
 		log.Printf("Error listening on the port %d: %v\n", portNum, err)
 		return
 	}
 	defer listener.Close()
-	
+
 	log.Printf("Listening on the port :%d\n", portNum)
-	//fmt.Printf("Listening on port %q\n", port)
+	// fmt.Printf("Listening on port %q\n", port)
 
 	for {
 		connection, err := listener.Accept()
-		if err != nil{
+		if err != nil {
 			log.Printf("Error accepting connection: %v\n", err)
 			continue
 		}
@@ -60,5 +62,4 @@ func Server(port string){
 
 		go AddNewClient(connection)
 	}
-
 }
