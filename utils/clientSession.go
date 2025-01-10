@@ -27,7 +27,7 @@ func HandleClientSession(client *client) {
 		clientMessage := strings.TrimSpace(string(buffer[:num]))
 		if clientMessage == "" {
 			log.Println("Can't send an empty message to the chat.")
-			break
+			continue
 		}
 
 		formattedClientMessage := ""
