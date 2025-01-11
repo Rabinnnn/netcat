@@ -105,7 +105,7 @@ Bob has joined our chat...
 The project includes unit tests for both server and client functionality. Run tests with:
 
 ```bash
-go test ./...
+go test -v ./utils
 ```
 
 ## Error Handling
