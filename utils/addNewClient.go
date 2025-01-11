@@ -12,7 +12,7 @@ func AddNewClient(connection net.Conn) {
 	connection.SetDeadline(time.Now().Add(60 * time.Second))
 
 	connection.Write([]byte("Welcome to TCP-Chat!\n"))
-	DisplayLogo(connection)
+	DisplayLogo(connection, "linuxLogo.txt")
 
 	for {
 		connection.Write([]byte("[ENTER YOUR NAME]: "))
@@ -27,7 +27,12 @@ func AddNewClient(connection net.Conn) {
 		clientName := strings.TrimSpace(string(buffer[:num]))
 
 		if clientName == "" {
-			connection.Write([]byte("Name must not be empty. Please try again.\n"))
+			connection.Write([]byte("Name error must not be empty. Please try again.\n"))
+			continue
+		}
+
+		if len(clientName) > 25 {
+			connection.Write([]byte("Name length error : must be less than 25 characters.\n"))
 			continue
 		}
 

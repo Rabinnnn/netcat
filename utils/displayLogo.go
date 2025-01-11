@@ -4,6 +4,6 @@ import (
 	"net"
 )
 
-func DisplayLogo(connection net.Conn) {
-	connection.Write([]byte(GetLogo("linuxLogo.txt")))
+func DisplayLogo(connection net.Conn, filepath string) {
+	connection.Write([]byte(GetLogo(filepath)))
 }
