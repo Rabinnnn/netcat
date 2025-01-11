@@ -4,11 +4,23 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log"
 	"net"
+	"os"
 	"strings"
 	"testing"
 	"time"
 )
+
+func TestMain(m *testing.M) {
+	// Set the working directory to the project root
+	if err := os.Chdir("../"); err != nil {
+		log.Fatalf("could not change working directory: %v", err)
+	}
+
+	// Run the tests
+	os.Exit(m.Run())
+}
 
 // mockConn implements net.Conn interface for testing
 type mockConn struct {
