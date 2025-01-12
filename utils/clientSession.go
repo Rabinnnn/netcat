@@ -32,13 +32,13 @@ func HandleClientSession(client *client) {
 
 		formattedClientMessage := ""
 		mChatHistory.Lock()
-		if len(chatHistory) == 0 {
-			formattedClientMessage = fmt.Sprintf("[%s][%s]: %s", time.Now().Format("2006-01-02 15:04:05"), client.name, clientMessage)
-		} else {
-			formattedClientMessage = fmt.Sprintf("\n[%s][%s]: %s", time.Now().Format("2006-01-02 15:04:05"), client.name, clientMessage)
+		formattedClientMessage = fmt.Sprintf("\n[%s][%s]: %s", time.Now().Format("2006-01-02 15:04:05"), client.name, clientMessage)
+		
+		if len(chatHistory) == 0{
+			chatHistory = append(chatHistory, fmt.Sprintf("[%s][%s]: %s", time.Now().Format("2006-01-02 15:04:05"), client.name, clientMessage))
+		}else{
+			chatHistory = append(chatHistory, formattedClientMessage)
 		}
-
-		chatHistory = append(chatHistory, formattedClientMessage)
 		mChatHistory.Unlock()
 
 		BroadcastMessage(formattedClientMessage, client.connection)
