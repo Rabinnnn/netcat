@@ -74,6 +74,11 @@ _)      \.___.,|     .'
      `-'       `--'
 [ENTER YOUR NAME]:
 ```
+### Exiting the Chat
+
+```
+To exit the chat group use Ctrl+C
+```
 
 ## Message Format
 
