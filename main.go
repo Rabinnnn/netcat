@@ -1,9 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
-	"strconv"
 
 	"netcat/utils"
 )
@@ -15,7 +15,7 @@ func main() {
 	case 1:
 		utils.Server(defaultPort)
 	case 2:
-		port, err := strconv.Atoi(os.Args[1])
+		port, err := utils.StringToInt(os.Args[1])
 		if err != nil {
 			log.Printf("Error converting %q to an int: %v\n", port, err)
 			return
@@ -25,9 +25,9 @@ func main() {
 			log.Println("Invalid port. Allowed range is 1024 - 65535")
 			return
 		}
-		utils.Server(":" + strconv.Itoa(port))
+		utils.Server(":" + os.Args[1])
 	default:
-		log.Println("[USAGE]: ./TCPChat $port")
-
+		fmt.Println("[USAGE]: ./TCPChat $port")
+		return
 	}
 }
