@@ -1,9 +1,9 @@
 package utils
 
 import (
+	"fmt"
 	"log"
 	"net"
-	"strconv"
 	"strings"
 	"sync"
 )
@@ -28,7 +28,7 @@ var (
 // 	- ensures the number of connected clients doesn't exceed 10
 
 func Server(port string) {
-	portNum, err := strconv.Atoi(strings.TrimPrefix(port, ":"))
+	portNum, err := StringToInt(strings.TrimPrefix(port, ":"))
 	if err != nil {
 		log.Printf("Invalid port number %q: %v\n", port, err)
 		return
@@ -41,8 +41,7 @@ func Server(port string) {
 	}
 	defer listener.Close()
 
-	log.Printf("Listening on the port :%d\n", portNum)
-	// fmt.Printf("Listening on port %q\n", port)
+	fmt.Printf("Listening on the port :%d\n", portNum)
 
 	for {
 		connection, err := listener.Accept()
@@ -62,4 +61,19 @@ func Server(port string) {
 
 		go AddNewClient(connection)
 	}
+}
+
+// stringToInt converts a string to an integer without using strconv
+func StringToInt(s string) (int, error) {
+	result := 0
+	for i := 0; i < len(s); i++ {
+		ch := s[i]
+		if ch < '0' || ch > '9' {
+			return 0, fmt.Errorf("invalid character %q", ch)
+		}
+
+		digit := int(ch - '0')
+		result = result*10 + digit
+	}
+	return result, nil
 }
